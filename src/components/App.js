@@ -1,19 +1,18 @@
-import React from 'react';
-import '../index.css';
-import styled from 'styled-components';
+import React from "react";
+import "../index.css";
+import styled from "styled-components";
 
-import Buttons from './Buttons';
-import { useState } from 'react';
+import Buttons from "./Buttons";
+import { useState } from "react";
 
 const StyledMainDiv = styled.div`
   max-width: 320px;
   background-color: teal;
   font-size: 2.5rem;
   padding: 15px;
-  border-radius:8px;
-  margin: 0 auto;
+  border-radius: 8px;
+  margin: 2em auto;
   position: relative;
- 
 
   .display {
     display: flex;
@@ -22,94 +21,143 @@ const StyledMainDiv = styled.div`
     padding-right: 18px;
     background: white;
     border: 1px solid;
-    overflow: hidden;
-    height: 15vh;
+    min-height: 15vh;
     justify-content: flex-end;
     align-items: flex-end;
+    word-wrap: break-word;
+    word-break: break-all;
+    font-size: 2.5rem;
   }
-
-`
+`;
 
 function App() {
-  const [ state, setState] = useState({
-    equation: '',
-    result: 0
+  const [state, setState] = useState({
+    value: null,
+    displayValue: "0",
+    operator: null,
+    waitingForOperand: false
   });
 
-  const handleClick = (e) => {
+  const { displayValue, waitingForOperand, operator, value } = state;
+
+  const handleDigits = e => {
     let clickedButton = e.target.value;
-    //check if target value is a number 
-    if(clickedButton === 'AC')  return clear();
-    if(!isNaN(clickedButton) || clickedButton === ".") {
-      if(clickedButton === '.' && equation.indexOf(clickedButton) !== -1) return
-      if(state.equation.startsWith('0',0) && clickedButton === '0' ) return
-     
+
+    if (waitingForOperand) {
   
-      setState(({equation})=>({ equation: equation + clickedButton }))
+      setState({
+        ...state,
+        displayValue: e.target.value,
+        waitingForOperand: false
+      });
+    } else {
+      setState({
+        ...state,
+        displayValue:
+          displayValue === "0" ? clickedButton : displayValue + clickedButton
+      });
     }
-    else if(['+','-','*','/'].indexOf(clickedButton) !== -1 && state.equation.indexOf(clickedButton) === -1) {
+  };
 
-      state.result > 0 ? 
-      setState(({result})=>({
+  const handleDecimal = e => {
+    if (displayValue.indexOf(e.target.value) !== -1) return;
 
-        equation: result + clickedButton,
-        
-        
-      })) : setState(({equation})=>({
-          // '' + clickedButton
-        equation: equation + clickedButton,
-        
-        
-      }))
+    if (waitingForOperand) {
+      setState({
+        displayValue: ".",
+        waitingForOperand: false
+      });
+    } else {
+      setState({
+        ...state,
+        displayValue: displayValue + e.target.value
+      });
+    }
+  };
 
-    } else if(clickedButton === '=') { solveEquation(); }
+  const handleClear = () => {
+    setState({
+      displayValue: "0"
+    });
+  };
 
-    return 
+  const handleToggle = () => {
+    const newValue = parseFloat(displayValue) * -1;
 
-  
-}
+    setState({
+      displayValue: String(newValue)
+    });
+  };
+
+  const handlePercent = () => {
+    const value = parseFloat(displayValue);
+
+    setState({
+      displayValue: (value / 100).toString()
+    });
+  };
+
+  const handleOperator = e => {
+    const operatorClicked = e.target.value;
+
+    //nextValue has the current displayValue in state
+    const nextValue = parseFloat(displayValue);
+
+    const operations = {
+      "/": (prevValue, nextValue) => prevValue / nextValue,
+      "+": (prevValue, nextValue) => prevValue + nextValue,
+      "*": (prevValue, nextValue) => prevValue * nextValue,
+      "-": (prevValue, nextValue) => prevValue - nextValue,
+      "=": (prevValue, nextValue) => nextValue
+    };
+
+    //if no previous value
+    if (value === null) {
+     
+      setState({
+        ...state,
+        value: nextValue
+      });
+     
+    } else if (operator) {
+     
+      const currentValue = value || 0;
+
+      const computedValue = operations[operator](currentValue, nextValue);
 
 
-const solveEquation = () => {
-      if(state.equation.length <= 2) return;
-      
-      let expression = state.equation
-
-      let extractedEquation = expression.slice(0,expression.length)
-      // eslint-disable-next-line
-      let evalEquation = new Function(`return ${extractedEquation}`)
-      let ans = evalEquation().toLocaleString()
 
       setState({
-        equation: '',
-        result: ans})
+        value: computedValue,
+        displayValue: computedValue.toString(),
+        waitingForOperand: true,
+        operator: operatorClicked
+      });
+      return;
+    }
 
-}
-
-const clear = () => {
-  setState({
-    equation: '',
-    result: 0
-  })
-}
-
-const { equation,result} = state
-
-
+    setState({
+      ...state,
+      value: nextValue,
+      operator: operatorClicked,
+      waitingForOperand: true
+    });
+  };
 
   return (
     <StyledMainDiv>
-      <div className ="display">
-           <div> {equation} </div>
-           {result}
+      <div className="display">
+        <code>{state.displayValue}</code>
       </div>
 
-      
-      <Buttons handleClickFn = {handleClick}/>
-      
-      
-      
-     
+      <Buttons
+        handleDigits={handleDigits}
+        handleDecimal={handleDecimal}
+        handleClear={handleClear}
+        handleToggle={handleToggle}
+        handlePercent={handlePercent}
+        handleOperator={handleOperator}
+      />
     </StyledMainDiv>
   );
 }

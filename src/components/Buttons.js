@@ -22,6 +22,7 @@ const StyledBtnDiv = styled.div`
     outline: none;
     font-weight: 550;
     font-family: "Open Sans", sans-serif;
+    background: #f9f9f9;
   }
 
   .btnRow {
@@ -32,7 +33,7 @@ const StyledBtnDiv = styled.div`
 `;
 
 const Buttons = ({
-  handleClickFn,
+
   handleDigits,
   handleDecimal,
   handleClear,
